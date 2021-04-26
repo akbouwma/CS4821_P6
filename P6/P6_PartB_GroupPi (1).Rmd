@@ -5,34 +5,32 @@ output: html_document
 
 ```{r}
 library(arules)
+library(arulesViz)
+library(RColorBrewer)
 library(tidyverse)
 ```
 
-
+## 5 a ##
 ```{r}
 order_small <- read.csv("instacart-small/instacart-small/order_products__train_small.csv")
-#View(order_small)
 order_med <- read.csv("instacart-small/instacart-small/orders_product__train_med.csv")
+products <- read.csv("instacart-small/instacart-small/products.csv")
 #View(order_med)
 ```
 
-```{r}
-m <- merge(order_small, order_med, by = "product_id")
-
-```
 
 ```{r}
 get_ids_and_counts <- function(orders) {
-  View(orders)
+  #View(orders)
   ids <- unique(orders$order_id)
   count <- numeric(1886)
   idsAndCounts <- cbind(ids, count)
   #View(idsAndCounts)
+  j <- 1
   for(i in 1:nrow(idsAndCounts)) {
-    for(j in 1:nrow(order_small)) {
-      if(idsAndCounts[i,1] == order_small$order_id[j]) {
-        idsAndCounts[i,2] = idsAndCounts[i,2] + order_small$add_to_cart_order[j]
-      } 
+    while(j < nrow(orders) && idsAndCounts[i] == orders$order_id[j]) {
+        idsAndCounts[i,2] = idsAndCounts[i,2] + orders$add_to_cart_order[j]
+      j <- j + 1
     }
   }
   return(idsAndCounts)
@@ -40,7 +38,7 @@ get_ids_and_counts <- function(orders) {
 
 
 IdsAndCounts.small <- get_ids_and_counts(order_small)
-View(IdsAndCounts.small)
+#View(IdsAndCounts.small)
 h.small <- hist(IdsAndCounts.small[,2])
 
 IdsAndCounts.med <- get_ids_and_counts(order_med)
@@ -49,50 +47,62 @@ h.med <-  hist(IdsAndCounts.med[,2])
 ```
 
 
+
+
+
+## 5 B ###
 ```{r}
-
-
-ggplot(order_small, aes(x = idsAndCounts[,2])) +
-  geom_histogram(bins = 30, position = "dodge") +
-  labs(x = "Number of Products per Order", y = "Frequency", title = "Frequency")
-
-```
-
-
-```{r}
-IdsAndCounts.small <- get_ids_and_counts(order_small)
-h <- hist(idsAndCounts[,2])
-
-ggplot(order_small, aes(x = idsAndCounts[,2])) +
-  geom_histogram(bins = 30, position = "dodge") +
-  labs(x = "Number of Products per Order", y = "Frequency", title = "Frequency")
-
-```
-
-
-```{r}
-ids <- unique(order_medium$order_id)
+ 
+#order_small1 <- merge(order_small, products, by = "product_id")
+#order_small1 <- sort(order_small1$order_id)
+#View(order_small1)
+small_ids <- as.matrix(unique(order_small$order_id))
 count <- numeric(1886)
-idsAndCounts <- cbind(ids, count)
-#View(idsAndCounts)
-for(i in 1:nrow(idsAndCounts)) {
-  for(j in 1:nrow(order_small)) {
-    if(idsAndCounts[i,1] == order_small$order_id[j]) {
-      idsAndCounts[i,2] = idsAndCounts[i,2] + order_small$add_to_cart_order[j]
-    } 
+small_ids <- cbind(small_ids, count)
+j <- 1
+#View(small_ids)
+#View(order_small)
+sink("outfile.txt")
+print(small_ids[2])
+
+for(i in 1:nrow(small_ids)) {
+  k <- 0
+  while(j < 20001 && small_ids[i,1] == order_small$order_id[j]) {
+    if (k > 0) {
+      cat(",")
+    }
+    k <- 1
+    prodId <- order_small$product_id[j]
+    prod <- products$product_name[prodId]
+    cat(prod)
+    j <- j + 1
   }
+  cat("\n")
 }
-#View(idsAndCounts)
-idsAndCounts[,2]
+
+trans <- read.transactions('outfile.txt', format="basket", sep=",")
+
+
+itemFrequencyPlot(trans, topN=15)
 ```
 
-
+## 5c ##
 ```{r}
-h <- hist(idsAndCounts[,2])
+rules <- apriori(trans, parameter = list(sup = 0.003, 
+                                              conf = 0.5, target="rules"))
+rules_by_lift <- sort(rules, by = "lift", decreasing=T)
+inspect(rules_by_lift[1:10])
 
-ggplot(order_small, aes(x = idsAndCounts[,2])) +
-  geom_histogram(bins = 30, position = "dodge") +
-  labs(x = "Number of Products per Order", y = "Frequency", title = "Frequency")
+```
+
+## 5d ##
+```{r}
+rules2 <- apriori(trans, parameter = list(sup = 0.0025, 
+                                              conf = 0.5, target="rules"))
+rules_by_lift2 <- sort(rules2, by = "lift", decreasing=T)
+inspect(rules_by_lift2[1:10])
+
+plot(rules2)
 
 ```
 
