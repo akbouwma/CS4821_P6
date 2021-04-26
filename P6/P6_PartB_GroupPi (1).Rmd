@@ -1,0 +1,98 @@
+---
+title: "P6_PartB_GroupPi"
+output: html_document
+---
+
+```{r}
+library(arules)
+library(tidyverse)
+```
+
+
+```{r}
+order_small <- read.csv("instacart-small/instacart-small/order_products__train_small.csv")
+#View(order_small)
+order_med <- read.csv("instacart-small/instacart-small/orders_product__train_med.csv")
+#View(order_med)
+```
+
+```{r}
+m <- merge(order_small, order_med, by = "product_id")
+
+```
+
+```{r}
+get_ids_and_counts <- function(orders) {
+  View(orders)
+  ids <- unique(orders$order_id)
+  count <- numeric(1886)
+  idsAndCounts <- cbind(ids, count)
+  #View(idsAndCounts)
+  for(i in 1:nrow(idsAndCounts)) {
+    for(j in 1:nrow(order_small)) {
+      if(idsAndCounts[i,1] == order_small$order_id[j]) {
+        idsAndCounts[i,2] = idsAndCounts[i,2] + order_small$add_to_cart_order[j]
+      } 
+    }
+  }
+  return(idsAndCounts)
+}
+
+
+IdsAndCounts.small <- get_ids_and_counts(order_small)
+View(IdsAndCounts.small)
+h.small <- hist(IdsAndCounts.small[,2])
+
+IdsAndCounts.med <- get_ids_and_counts(order_med)
+h.med <-  hist(IdsAndCounts.med[,2])
+
+```
+
+
+```{r}
+
+
+ggplot(order_small, aes(x = idsAndCounts[,2])) +
+  geom_histogram(bins = 30, position = "dodge") +
+  labs(x = "Number of Products per Order", y = "Frequency", title = "Frequency")
+
+```
+
+
+```{r}
+IdsAndCounts.small <- get_ids_and_counts(order_small)
+h <- hist(idsAndCounts[,2])
+
+ggplot(order_small, aes(x = idsAndCounts[,2])) +
+  geom_histogram(bins = 30, position = "dodge") +
+  labs(x = "Number of Products per Order", y = "Frequency", title = "Frequency")
+
+```
+
+
+```{r}
+ids <- unique(order_medium$order_id)
+count <- numeric(1886)
+idsAndCounts <- cbind(ids, count)
+#View(idsAndCounts)
+for(i in 1:nrow(idsAndCounts)) {
+  for(j in 1:nrow(order_small)) {
+    if(idsAndCounts[i,1] == order_small$order_id[j]) {
+      idsAndCounts[i,2] = idsAndCounts[i,2] + order_small$add_to_cart_order[j]
+    } 
+  }
+}
+#View(idsAndCounts)
+idsAndCounts[,2]
+```
+
+
+```{r}
+h <- hist(idsAndCounts[,2])
+
+ggplot(order_small, aes(x = idsAndCounts[,2])) +
+  geom_histogram(bins = 30, position = "dodge") +
+  labs(x = "Number of Products per Order", y = "Frequency", title = "Frequency")
+
+```
+
